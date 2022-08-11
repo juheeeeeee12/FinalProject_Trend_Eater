@@ -1,0 +1,709 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="boardMapper">
+	
+	
+	<!-- 리뷰 게시판 상세보기 -->
+	<select id="selectPrBoard" resultMap="productResultSet">
+		select *
+		from plist
+		where product_no = #{pno}
+		<if test="update == null">
+		 and board_status = 'Y'
+		</if>
+		
+	</select>
+	
+	<resultMap type="product" id="productResultSet">
+		<id column="PRODUCT_NO" property="productNo"/>
+		<result column="PRODUCT_NAME" property="productName"/>
+		<result column="PRODUCT_PRICE" property="productPrice"/>
+		<result column="PRODUCT_STOCK" property="productStock"/>
+		<result column="PRODUCT_ONELINE" property="productOneLine"/>
+		<result column="PRODUCT_TYPE" property="productType"/>
+		<result column="BOARD_CONTENT" property="boardContent"/>
+		<result column="CREATE_DATE" property="createDate"/>
+		<result column="MODIFY_DATE" property="modifyDate"/>
+		<result column="PRODUCT_STATUS" property="productStatus"/>
+		<result column="BOARD_COUNT" property="boardCount"/>
+		<result column="REVIEW_COUNT" property="reviewCount"/>
+		<result column="SCRAP_COUNT" property="scrapCount"/>
+		<result column="BOARD_STATUS" property="boardStatus"/>
+		<result column="ADMIN_ID" property="adminId"/>
+		<result column="ADMIN_NAME" property="adminName"/>
+		
+		<result column="TOTAL_AVG" property="totalAvg"/>
+		<result column="RECOMMEND_AVG" property="recommendAvg"/>
+		<result column="REORDER_AVG" property="reorderAvg"/>
+		<result column="SPICY_AVG" property="spicyAvg"/>
+		<result column="SWEET_AVG" property="sweetAvg"/>
+		<result column="BITTER_AVG" property="bitterAvg"/>
+		<result column="SALTY_AVG" property="saltyAvg"/>
+		<result column="SOUR_AVG" property="sourAvg"/>
+	
+	</resultMap>
+	
+	<!-- 리뷰게시판 상세보기 -->
+	<select id="selectPrImage" resultMap="imageResultSet">
+		select * 
+		from image
+		where board_type=1 and identify_no=#{pno}
+	</select>
+	
+	<resultMap type="image" id="imageResultSet">
+		<id column="IMAGE_NO" property="imageNo"/>
+		<result column="CHANGE_NAME" property="changeName"/>
+		<result column="FILE_PATH" property="filePath"/>
+		<result column="FILE_LEVEL" property="fileLevel"/>
+		<result column="FILE_TYPE" property="fileType"/>
+		<result column="IDENTIFY_NO" property="identifyNo"/>
+	</resultMap>
+	
+	<!-- 시식신청  -->
+	<insert id="registerApplyTaste">
+		insert into apply_t
+		values(seq_apid.nextval, #{address}, #{phone}, default, #{emailId}, #{tasteNo})
+	</insert>
+	
+	<!-- 시식신청 중복체크  -->
+	<select id="dupCheckApply" resultType="_int">
+		select count(*)
+		from apply_t
+		where email_id = #{emailId} and taste_no = #{tasteNo}
+	</select>
+	
+	<!-- 스크랩 여부 체크 -->
+	<select id="checkScrap" resultType="_int">
+		select count(*)
+		from scrap
+		where email_id = #{emailId} and product_no = #{pno}
+	</select>
+	<!-- 스크랩 삭제 -->
+	<delete id="deleteScrap">
+		delete scrap
+		where email_id = #{emailId} and product_no = #{pno}
+	</delete>
+	<!-- 스크랩 추가 -->
+	<insert id="insertScrap">
+		insert into scrap
+		values(seq_sid.nextval, #{emailId}, #{pno})
+	</insert>
+	
+	
+	<select id="getCountReviewPoint" resultType="_int">
+		<if test="reviewType.equals('review_rating')">
+			select count(*)
+			from review_list
+			where product_no = #{pno} and review_rating = #{arr}
+		</if>
+		<if test="reviewType.equals('recommend')">
+			select count(*)
+			from review_list
+			where product_no = #{pno} and recommend = #{arr}
+		</if>
+		<if test="reviewType.equals('repurcharse')">
+			select count(*)
+			from review_list
+			where product_no = #{pno} and repurcharse = #{arr}
+		</if>
+	</select>
+	
+
+
+<!-- 	이용준@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+	 <select id="reviewCount" resultType="_int">
+     select count(*)
+     from review_list
+     <if test="productNo != null">
+     where REVIEW_STATUS = 'Y' and product_no = #{ productNo }
+     </if>
+  	</select>
+  
+  <select id="getReviewList" resultMap="reviewResultSet">
+	select REVIEW_NO, REVIEW_RATING, RECOMMEND, REPURCHARSE, spicy, sweet, bitter, salty, sour, good, bad, rl.CREATE_DATE, rl.MODIFY_DATE, LIKE_COUNT, REVIEW_STATUS, rl.email_id, PRODUCT_NO, flavor1, flavor2, flavor3, nickname,change_name
+     from review_list rl
+         join member m on (rl.email_id = m.email_id)    
+     where review_status  = 'Y' and product_no = #{ productNo }
+        <if test='value == null or value.equals("reviewNo")'>
+         order by review_no desc
+         </if>
+        <if test='value != null and value.equals("old")'>
+         order by review_no asc
+         </if>
+        <if test='value != null and value.equals("likeCount")'>
+         order by like_count desc
+         </if>
+        <if test='value != null and value.equals("reviewRatingHigh")'>
+         order by review_rating desc
+         </if>
+        <if test='value != null and value.equals("reviewRatingLow")'>
+         order by review_rating asc
+         </if>
+  </select>
+  <resultMap type="Review" id="reviewResultSet">
+       <id column="REVIEW_NO" property="reviewNo"/>
+       <result column="REVIEW_RATING" property="reviewRating"/>
+       <result column="RECOMMEND" property="recommend"/>
+       <result column="REPURCHARSE" property="repurcharse"/>
+       <result column="SPICY" property="spicy"/>
+       <result column="SWEET" property="sweet"/>
+       <result column="BITTER" property="bitter"/>
+       <result column="SALTY" property="salty"/>
+       <result column="SOUR" property="sour"/>
+       <result column="GOOD" property="good"/>
+       <result column="BAD" property="bad"/>
+       <result column="CREATE_DATE" property="createDate"/>
+       <result column="MODIFY_DATE" property="modifyDate"/>
+       <result column="LIKE_COUNT" property="likeCount"/>
+       <result column="REVIEW_STATUS" property="reviewStatus"/>
+       <result column="PRODUCT_NO" property="productNo"/>
+       <result column="EMAIL_ID" property="emailId"/>
+       <result column="NICKNAME" property="nickName"/>
+       <result column="PRODUCT_NAME" property="productName"/>
+       <result column="PRODUCT_PRICE" property="productPrice"/>
+    </resultMap>
+    
+
+
+	<select id="getReviewImageList" resultMap="reviewImageResultSet">
+		select *
+		from review_img
+		
+	</select>
+	
+	<resultMap type="ReviewImage" id="reviewImageResultSet">
+		<id column="IMAGE_NO" property="imageNo"/>
+		<result column="CHANGE_NAME" property="changeName"/>
+		<result column="ORIGIN_NAME" property="originName"/>
+		<result column="FILE_PATH" property="filePath"/>
+		<result column="REVIEW_NO" property="reviewNo"/>
+	</resultMap>
+	
+	 <insert id="insertReview" >
+       insert into review_list
+       values (seq_rid.nextval, #{reviewRating}, #{recommend}, #{repurcharse}, #{spicy}, #{sweet}, #{bitter}, #{salty}, #{sour}, #{good},
+       			#{bad}, sysdate, sysdate, default,	'Y', #{emailId}, #{productNo})
+<!--        			 productNo가 패런트가 없다고 안돼서 임시번호 .... -->
+    </insert>
+    
+    <insert id="insertReviewImage">
+    	insert into review_img
+    	values (seq_ino.nextval, #{changeName}, #{originName}, #{filePath}, sysdate, seq_rid.currval)
+    </insert>
+    
+    <insert id="reportReview">
+    	insert into report
+    	values (seq_repid.nextval, #{reportType}, #{reportContent}, 'N', sysdate, #{emailId}, #{reviewNo})
+    </insert>
+ <!-- boardLike -->
+ 
+ 
+ 	<!-- 로그인 유저의 아이디로 좋아요를 조회한 결과를 서브쿼리로 하여 FROM절에 넣어 OUTER 조인을 활용 -->
+ 	<select id="userLikeSelect" resultMap="userLikeResultSet">
+	select a.review_no, like_no, b.email_id
+	from (select * from user_like where email_id = #{emailId}) b
+   right join  review_list a on(a.review_no = b.review_no)
+ 	</select>
+ 	
+ 	<resultMap type="Like" id="userLikeResultSet">
+ 		<id column="LIKE_NO" property="likeNo"/>
+ 		<result column="REVIEW_NO" property="reviewNo"/>
+ 		<result column="EMAIL_ID" property="emailId"/>
+ 	</resultMap>
+ 	
+
+
+      <!-- 좋아요 카운트 -->
+	<select id="likeCheck" resultType="_int">
+		select count(*) 
+		from user_like
+		where review_no = #{reviewNo} and email_Id = #{emailId}
+
+	</select>
+
+	
+	<!-- 게시글 좋아요 -->
+<insert id="insertLike">
+		insert into user_like
+
+		values(seq_likeid.nextval, #{reviewNo}, #{emailId})
+</insert>
+
+	
+	<!-- 게시글 좋아요 취소 -->
+ <delete id="deleteLike">
+		delete
+
+		  from user_like
+		 where review_no = #{reviewNo}
+		   and email_id = #{emailId}
+	</delete> 
+	
+	
+
+		
+	<!-- 이용준 끝 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+	
+
+
+
+
+
+
+
+
+<!-- notice 읽기(조회) - 페이징처리1 :총게시물수 가져오기 -->
+	<select id="getListCount" resultType="_int"> <!-- resultType,resultMap 무조건 있어야함. 리절셋하고 나서 뭘로 받을지 정해줘야하기에 -->
+		select count(*)
+		from board
+		where board_status = 'Y'
+	</select>
+	
+	
+<!-- notice 읽기(조회) - 페이징처리2 : 원하는 게시판 번호 조회 -->
+	<select id="getBoardList" resultMap="boardResultSet">
+		select *
+		from board 
+		where board_status = 'Y' and board_type = 1 
+		order by board_no desc
+	</select>
+	<resultMap type="Board" id="boardResultSet">	<!-- type="" 속성 별칭 설정하면 Board도 가능 -->
+		<id column="BOARD_NO" property="boardId"/> 					<!-- PK(기본키) -->
+		<result column="BOARD_TITLE" property="boardTitle"/>		<!-- 일반 컬럼 -->
+		<result column="BOARD_CONTENT" property="boardContent"/>  <!-- 위의 select태그에서 join해서 가져온 멤버테이블의 컬럼 nickname  -->
+		<result column="CREATE_DATE" property="boardCreateDate"/>
+		<result column="MODIFY_DATE" property="boardModifyDate"/>
+		<result column="BOARD_COUNT" property="boardCount"/>
+		<result column="BOARD_STATUS" property="boardStatus"/>
+		<!-- <result column="BOARD_TYPE" property="boardStatus"/>  --> <!-- ??? -->
+		<result column="ADMIN_ID" property="adminId"/>
+	</resultMap>
+	
+
+<!-- notice 쓰기  -->
+	<insert id="insertNotice">
+		insert into board
+		values(seq_bid.nextval,#{boardTitle},#{boardContent}, sysdate, default, default, 'Y', 1, #{adminId})
+	</insert>
+	
+<!-- notice 수정  -->
+	<update id="updateNotice">
+		update board
+		set board_title = #{boardTitle}, board_content = #{boardContent}
+		where board_no = #{boardId}
+	</update>
+
+<!-- notice 삭제 -->
+	<update id="deleteNotice">
+		update board
+		set board_status = 'N'
+		where board_no = #{boardId}
+	</update>
+	
+<!-- notice 상세보기 -->	
+	<update id="addReadCount">
+		update board
+		set board_count = board_count + 1
+		where board_no = #{boardId}
+	</update>
+	
+
+	<select id="selectBoard" resultMap="boardResultSet">
+		select *
+		from board
+			<!-- join member on (board_writer = id) -->
+		where board_no = #{boardId} and board_status = 'Y'
+	</select>
+ 
+ 
+<!-- QnA 읽기(조회) : 페이징처리1 - 총게시물 --> 
+	<select id="getQnaListCount" resultType="_int"> <!-- resultType,resultMap 무조건 있어야함. 리절셋하고 나서 뭘로 받을지 정해줘야하기에 -->
+		select count(*)
+		from qna
+		where qna_status = 'Y'
+	</select>
+	
+<!-- QnA 읽기(조회) : 페이징처리2 - 필요 게시물 --> 
+	<select id="getBoardQnaList" resultMap="boardQnaResultSet">
+		select *
+		from qna 
+		where qna_status = 'Y' and email_id = #{emailId}
+		order by qna_no desc
+	</select>
+	<resultMap type="BoardQnA" id="boardQnaResultSet">	<!-- type="" 속성 별칭 설정하면 Board도 가능 -->
+		<id column="QNA_NO" property="qnaNo"/> 					<!-- PK(기본키) -->
+		<result column="QNA_TITLE" property="qnaTitle"/>		<!-- 일반 컬럼 -->
+		<result column="QNA_CONTENT" property="qnaContent"/>  <!-- 위의 select태그에서 join해서 가져온 멤버테이블의 컬럼 nickname  -->
+		<result column="QNA_CREATE_DATE" property="qnaCreateDate"/>
+		<result column="QNA_MODIFY_DATE" property="qnaModifyDate"/>
+		<result column="QNA_STATUS" property="qnaStatus"/>
+		<result column="QNA_ANS_STATUS" property="qnaAnsStatus"/>
+		<result column="EMAIL_ID" property="emailId"/>
+	</resultMap>
+
+
+<!-- QnA 쓰기 -->
+	<insert id="insertBoardQna"> 
+		insert into qna
+		values(seq_qnaid.nextval, #{qnaTitle}, #{qnaContent}, sysdate, default, default, default, #{emailId})
+	</insert>
+	
+	
+
+<!-- QnA 수정1 : select 수정을 위해 해당 게시판번호의 게시판 전체 정보 받아오기 -->		
+	<select id="selectBoardQna" resultMap="boardQnaResultSet">
+		select *
+		from qna
+		where qna_status = 'Y' and qna_no = #{qnaNo} 
+	</select>
+
+	
+
+<!-- QnA 수정2 : update -->
+	<update id="updateBoardQna">
+		update qna
+		set qna_title = #{qnaTitle}, qna_content = #{qnaContent}
+		where qna_status = 'Y' and qna_No = #{qnaNo}  
+	</update>
+ 	
+<!-- QnA 삭제 -->
+	<update id="deleteBoardQna">
+		update qna
+		set qna_status = 'N'
+		where qna_No = #{qnaNo}
+	</update>
+
+
+
+<!-- adminNotice 수정1 : select 수정을 위해 해당 게시판번호의 게시판 전체 정보 받아오기 -->	
+	<select id="adminNoticeSelect" resultMap="boardResultSet">
+		select *
+		from board
+		where board_status = 'Y' and board_no = #{boardId} 
+	</select>
+
+
+<!-- adminQnA 조회  -->
+	<select id="getBoardQnaListAdmin" resultMap="boardQnaResultSet">
+		select *
+		from qna 
+		where qna_status = 'Y'
+		order by qna_no desc
+	</select>
+	
+<!-- adminQnaAns 쓰기 -->	
+	<select id="getQnaReplyListAdmin" resultMap="ReplyResultSet">
+		select *
+		from qna_reply 
+		where reply_status = 'Y' 
+		order by reply_no desc
+	</select>
+	<resultMap type="Reply" id="ReplyResultSet">	<!-- type="" 속성 별칭 설정하면 Board도 가능 -->
+		<id column="REPLY_NO" property="replyNo"/> 					<!-- PK(기본키) -->
+		<result column="REPLY_CONTENT" property="replyContent"/>  <!-- 위의 select태그에서 join해서 가져온 멤버테이블의 컬럼 nickname  -->
+		<result column="REF_QNA_NO" property="refQnaNo"/>
+		<result column="ADMIN_ID" property="adminId"/>
+		<result column="REPLY_CREATE_DATE" property="replyCreateDate"/>
+		<result column="REPLY_MODIFY_DATE" property="replyModifyDate"/>
+		<result column="REPLY_STATUS" property="replyStatus"/>
+	</resultMap>
+	
+<!-- adminQnA 쓰기  -->
+	<insert id="adminQnaAnsWrite">
+		insert into qna_reply
+		values(seq_qnarid.nextval, #{replyContent}, #{refQnaNo}, #{adminId},  sysdate, default, 'Y' ) 
+	</insert>
+
+
+<!-- adminQnaAnsUpdate : 답변 수정1 : select 수정을 위해 해당 정보 받아오기 -->	
+	<select id="adminQnaAnsSelect" resultMap="ReplyResultSet">
+		select *
+		from QNA_REPLY
+		where REPLY_STATUS = 'Y' and REPLY_NO = #{replyNo} 
+	</select>
+
+<!-- adminQnaAnsUpdate : 답변 수정2 -->
+	<update id="adminQnaAnsUpdate">
+		update qna_reply
+		set reply_content = #{replyContent}
+		where reply_No = #{replyNo}
+	</update>
+<!-- adminQnaAnsDelete : 답변 삭제 -->
+	<update id="adminQnaAnsDelete">
+		update qna_reply
+		set reply_status = 'N'
+		where reply_No = #{replyNo}
+	</update>
+
+
+
+
+
+
+<!-- EventManagement 읽기(조회) : 페이징처리1 - 총게시물 --> 
+	<select id="getEListCount" resultType="_int">
+ 		select count(*)
+ 		from board
+ 		where BOARD_STATUS = 'Y' AND BOARD_TYPE = 2
+ 	</select>
+ 	
+<!-- EventManagement 읽기(조회) : 페이징처리2 - 필요 게시물 -->
+	<select id="getEBoardList" resultMap="eBoardResultSet">
+ 		select * 
+ 		from board
+ 		where board_status ='Y' and board_type = 2
+ 		order by board_no desc
+ 	
+ 	</select>
+ 	<resultMap type="EventBoard" id="eBoardResultSet">
+ 		<id column="BOARD_NO" property="boardNo"/>
+ 		<result column="BOARD_TITLE" property="boardTitle"/>
+ 		<result column="BOARD_CONTENT" property="boardContent"/>
+ 		<result column="CREATE_DATE" property="createDate"/>
+ 		<result column="MODIFY_DATE" property="modifyDate"/>
+ 		<result column="BOARD_COUNT" property="boardCount"/>
+ 		<result column="BOARD_STATUS" property="boardStatus"/>
+ 		<result column="BOARD_TYPE" property="boardType"/>
+ 		<result column="ADMIN_ID" property="adminId"/>
+ 	</resultMap>
+
+
+<!-- EventManagement 글쓰기  1 : 글내용 삽입 -->
+	<insert id="insertEBoard" >
+ 	insert into board 
+ 	values (seq_bid.nextval, #{boardTitle}, #{boardContent}, SYSDATE, NULL, DEFAULT, DEFAULT, #{boardType}, #{adminId})
+ 	</insert>
+
+
+<!-- EventManagement 글쓰기  2 .그림 삽입 -->
+	<insert id="insertEImgList">
+ 	insert into IMAGE
+ 	values(seq_ino.nextval, #{changeName}, #{originName}, #{filePath}, SYSDATE, #{fileLevel}, 
+ 			NULL, #{boardType}, seq_bid.currval)
+ 	</insert>
+
+<!-- EventManagement 글쓰기  3  카테고리 삽입 -->
+	<insert id="insertECategory">
+	insert into EVENT_BOARD
+	values(seq_bid.currval, #{category})
+	</insert>
+
+<!-- EventBoard 상세보기  조회수 증가  -->
+	<update id="addEReadCount">
+ 	update board
+ 	set board_count = board_count +1
+ 	where board_no = #{eNo}
+ 	</update>
+ 	
+<!-- EventBoard 상세조회 글내용-->
+	<select id="selectEBoard" resultMap="eBoardResultSet">
+ 	select * from board
+ 	where board_no = #{eNo} AND BOARD_STATUS ='Y'
+ 	</select>
+ 	
+<!-- 이벤트 게시판 상세조회 파일리스트 -->
+ 	<select id="selectEFiles" resultMap="eBoardImages">
+ 	select * from IMAGE
+ 	join BOARD ON (IDENTIFY_NO = BOARD_NO )
+ 	where IDENTIFY_NO = #{eNO} and BOARD_STATUS = 'Y' and IMAGE.BOARD_TYPE = 2
+ 	</select>
+ 	<resultMap type="Image" id="eBoardImages">
+ 	<id column="IMAGE_NO" property="imageNo"/>
+ 	<result column="CHANGE_NAME" property="changeName"/>
+ 	<result column="ORIGIN_NAME" property="originName"/>
+ 	<result column="FILE_PATH" property="filePath"/>
+ 	<result column="UPLOAD_DATE" property="uploadDate"/>
+ 	<result column="FILE_LEVEL" property="fileLevel"/>
+ 	<result column="FILE_TYPE" property="fileType"/>
+ 	<result column="BOARD_TYPE" property="boardType"/>
+ 	<result column="IDENTIFY_NO" property="identifyNo"/>
+ 	</resultMap>
+  
+<!-- 이벤트 게시판 글수정 -->
+	<update id="updateEBoard">
+	 	update board
+	 	set BOARD_TITLE=#{boardTitle}, BOARD_CONTENT=#{boardContent}, 
+	 	MODIFY_DATE=SYSDATE, ADMIN_ID=#{adminId}
+	 	where BOARD_NO=#{boardNo}
+ 	</update>
+
+<!-- 이벤트게시판 이미지 삭제  -->
+	<delete id="deleteEOriginImage">
+ 		delete 
+ 		from IMAGE
+ 		where IDENTIFY_NO=#{boardNo} and board_type = 2
+ 	</delete>
+<!-- 이벤트게시판 수정이미지 업로드 -->
+	<insert id="reuploadEImage">
+ 	insert into IMAGE
+ 	values(seq_ino.nextval, #{changeName}, #{originName}, #{filePath}, SYSDATE, #{fileLevel}, 
+ 			NULL, #{boardType}, #{identifyNo})
+ 	</insert> 
+
+
+<!--이벤트 게시판 글 삭제  -->
+	<update id="eDeleteBoard">
+	update board
+	set BOARD_STATUS = 'N'
+	where BOARD_NO =#{eno}
+	</update>	 	 	
+
+<!--메인페이지 이벤트게시판 최근 글 5개 가져오기  -->
+	<select id="getRecentEboard" resultMap="eBoardResultSet">
+		<![CDATA[
+			select *
+			from(select *  from board
+			where board_status= 'Y' and board_type=2
+			order by board_NO desc)
+			where rownum <=5
+		]]>
+
+	</select>
+<!-- 메인페이지 이벤트게시판 이미지 가져오기 -->
+	<select id="getEImgList" resultMap="eBoardImages">
+	select * 
+	from image
+	where board_type = 2 and file_level =1 and identify_no =#{boardNo}
+	</select>
+<!-- 메인페이지 최신제품 내용 가져오기 -->
+	<select id="getNewProucts" resultMap="mProductResultSet">
+	<![CDATA[
+		select *
+		from(SELECT* 
+		FROM product
+		WHERE PRODUCT_STATUS ='Y'
+		order by PRODUCT_NO DESC)
+		where ROWNUM <=10
+	]]>
+	</select>
+	<resultMap type="Product" id="mProductResultSet">
+		<id column="PRODUCT_NO" property="productNo"/>
+		<result column="PRODUCT_NAME" property="productName"/>
+		<result column="PRODUCT_PRICE" property="productPrice"/>
+		<result column="PRODUCT_STOCK" property="productStock"/>
+		<result column="PRODUCT_ONELINE" property="productOneLine"/>
+		<result column="PRODUCT_TYPE" property="productType"/>
+		<result column="BOARD_CONTENT" property="boardContent"/>
+		<result column="CREATE_DATE" property="createDate"/>
+		<result column="MODIFY_DATE" property="modifyDate"/>
+		<result column="PRODUCT_STATUS" property="productStatus"/>
+		<result column="BOARD_COUNT" property="boardCount"/>
+		<result column="REVIEW_COUNT" property="reviewCount"/>
+		<result column="SCRAP_COUNT" property="scrapCount"/>
+		<result column="BOARD_STATUS" property="boardStatus"/>
+		<result column="ADMIN_ID" property="adminId"/>
+		<result column="ADMIN_NAME" property="adminName"/>
+		<result column="TOTAL_AVG" property="totalAvg"/>
+		<result column="RECOMMEND_AVG" property="recommendAvg"/>
+		<result column="REORDER_AVG" property="reorderAvg"/>
+		<result column="SPICY_AVG" property="spicyAvg"/>
+		<result column="SWEET_AVG" property="sweetAvg"/>
+		<result column="BITTER_AVG" property="bitterAvg"/>
+		<result column="SALTY_AVG" property="saltyAvg"/>
+		<result column="SOUR_AVG" property="sourAvg"/>
+
+	</resultMap>
+<!-- 메인페이지 최신제품리스트 이미지 -->
+	<select id="getNewPImages" resultMap="eBoardImages">
+	select * 
+	from image
+	where board_type=1 and file_level = 1 and identify_no = #{ProductNo}
+	</select>		
+
+<!-- 메인페이지 베스트 제품 리스트  -->
+	<select id="getbProducts" resultMap="mProductResultSet">
+		<![CDATA[	
+			select *
+			from (SELECT* 
+			FROM product
+			WHERE PRODUCT_STATUS ='Y'
+			order by TOTAL_AVG DESC)
+			where ROWNUM <=10
+		]]>	
+	</select>
+
+
+
+<!-- 메인페이지 베스트 제품 이미지리스트 -->	
+	<select id="getbImgList" resultMap="eBoardImages">
+	select * 
+	from image
+	where board_type=1 and file_level = 1 and identify_no = #{ProductNo}
+	</select>
+
+<!--메인페이지 좋아요 가장 많은리뷰리스트 받아오기  -->	
+	<select id="getbReview" resultMap="reviewResultSet">
+	<![CDATA[
+		select *
+		from(select REVIEW_NO, REVIEW_RATING, RECOMMEND, REPURCHARSE, spicy, sweet, bitter, salty, sour, good, bad, 
+			rl.CREATE_DATE, rl.MODIFY_DATE, LIKE_COUNT, REVIEW_STATUS, rl.email_id, PRODUCT_NO, flavor1, flavor2, flavor3, nickname, PRODUCT_NAME, PRODUCT_PRICE
+		    from review_list rl
+         		join member m on (rl.email_id = m.email_id) 
+         		join product p using(product_no)   
+     			where review_status  = 'Y'
+				order by LIKE_COUNT DESC)
+		where ROWNUM <= 10
+	]]>
+	
+	
+<!-- 	<![CDATA[ -->
+<!-- 		select * -->
+<!-- 		from(select *  -->
+<!-- 		from REVIEW_LIST -->
+<!-- 		order by LIKE_COUNT DESC) -->
+<!-- 		where ROWNUM <= 10 -->
+<!-- 	]]> -->
+	</select>
+<!-- 메인페이지 좋아요 가장많이 받은 리뷰리스트 이미지 받아오기 -->	
+	<select id="getbRImgList" resultMap="reviewImageResultSet">
+	select *
+	from (select *
+	from REVIEW_IMG
+	where REVIEW_NO = #{reviewNo})
+	where RowNum =1
+	
+	</select>
+
+	<!-- 좋아요 전체 카운트 -->
+	<select id="selectLikeCount" resultType = "_int">
+		select 
+			   review_no
+			 , email_id
+		  from
+		       user_like
+		 where review_no = #{reviewNo}
+	</select>
+	
+ 
+    
+    <select id="someReviewCount" resultType="_int">
+    select count(*)
+     from review_list rl
+        join member m on (rl.email_id = m.email_id) 
+     where REVIEW_STATUS = 'Y' and m.nickName=#{nickName}
+  </select>
+  
+    <select id="someReviewList" resultMap="reviewResultSet">
+<!--      select * -->
+<!--      from review_list rl -->
+<!--          join member m on (rl.email_id = m.email_id)     -->
+<!--      where review_status  = 'Y' -->
+<!--      order by review_no desc -->
+select REVIEW_NO, REVIEW_RATING, RECOMMEND, REPURCHARSE, spicy, sweet, bitter, salty, sour, good, bad, rl.CREATE_DATE, rl.MODIFY_DATE, LIKE_COUNT, REVIEW_STATUS, rl.email_id, PRODUCT_NO, flavor1, flavor2, flavor3,nickName,change_name
+     from review_list rl
+         join member m on (rl.email_id = m.email_id)    
+     where review_status  = 'Y' and nickName=#{nickName}
+     order by review_no desc
+  </select>
+  
+  <select id="someReviewImageList" resultMap="reviewImageResultSet">
+		select *
+		from review_img
+		where review_no=#{reviewNo} 
+	</select>
+    
+ <!-- boardLike -->
+
+
+</mapper>
+
